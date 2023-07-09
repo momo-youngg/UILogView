@@ -13,12 +13,14 @@ public class UILogView: UIView {
             self.logTableView.reloadData()
         }
     }
+    
     private var filteredLog: [Log] {
         guard let filteredString = filteredString else {
             return self.logs
         }
         return logs.filter { $0.text.contains(filteredString) }
     }
+    
     private var filteredString: String? = nil {
         didSet {
             self.logTableView.reloadData()
@@ -67,7 +69,6 @@ extension UILogView {
         self.configureExpandedView()
     }
     
-    // called once only at initializer
     private func configureFoldedView() {
         self.configureTitleLabel(
             to: self.foldedView,
@@ -77,7 +78,6 @@ extension UILogView {
         )
     }
     
-    // called once only at initializer
     private func configureExpandedView() {
         self.configureTitleLabel(
             to: self.expandedView,
@@ -88,7 +88,6 @@ extension UILogView {
         self.configureExpandedBodyView()
     }
     
-    // called once only at initializer
     private func configureExpandedBodyView() {
         let logBodyView = UIView(
             frame: CGRect(
@@ -109,7 +108,6 @@ extension UILogView {
         self.configureBottomControlAreaView(to: logBodyView)
     }
     
-    // called once only at initializer
     private func configureTopControlAreaView(to logBodyView: UIView) {
         let topControlAreaView = UIView(
             frame: CGRect(
@@ -149,7 +147,6 @@ extension UILogView {
         searchTextField.delegate = self
     }
     
-    // called once only at initializer
     private func configureLogAreaView(to logBodyView: UIView) {
         self.logTableView.register(
             LogTableViewCell.self,
@@ -170,7 +167,6 @@ extension UILogView {
         self.addSubview(self.logTableView)
     }
     
-    // called once only at initializer
     private func configureBottomControlAreaView(to logBodyView: UIView) {
         let bottomControlAreaView = UIView(
             frame: CGRect(
@@ -186,7 +182,6 @@ extension UILogView {
         )
         logBodyView.addSubview(bottomControlAreaView)
         
-        // go up, go down, clear, copy all, custom button
         func uiButtonWithImage(systemName: String, selector: Selector) -> UIButton {
             let button = UIButton()
             let image = UIImage(systemName: systemName)
@@ -221,7 +216,6 @@ extension UILogView {
     }
     
     private func configureTitleLabel(to parentView: UIView, text: String, width: CGFloat, height: CGFloat) {
-        // configure titleAreaView (contains border and background and frame)
         let titleAreaView = UIView(
             frame: CGRect(
                 origin: .zero,
@@ -236,7 +230,6 @@ extension UILogView {
         titleAreaView.layer.borderColor = self.appearance.borderColor.cgColor
         parentView.addSubview(titleAreaView)
         
-        // configure titleLabel (contains text, color, and autolayout to titleAreaView
         let titleLabel = UILabel()
         titleLabel.text = text
         titleLabel.textColor = self.appearance.textColor
@@ -247,10 +240,11 @@ extension UILogView {
             titleLabel.centerYAnchor.constraint(equalTo: titleAreaView.centerYAnchor)
         ])
         
-        // configure tap gesture to toggle the state of expanded
         titleAreaView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(self.didTapTitleView)))
     }
-    
+}
+
+extension UILogView {
     @objc private func didTapTitleView() {
         self.isExpanded.toggle()
         self.setNeedsLayout()
