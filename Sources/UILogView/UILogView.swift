@@ -5,7 +5,11 @@ public class UILogView: UIView {
     private let appearance: UILogViewApperance
     private let foldedView: UIView = UIView()
     private let expandedView: UIView = UIView()
-    private var isExpanded: Bool = false
+    private var isExpanded: Bool = false {
+        didSet {
+            self.setNeedsLayout()
+        }
+    }
     private let logTableView: UITableView = UITableView()
     
     private var logs: [Log] = [] {
@@ -27,8 +31,29 @@ public class UILogView: UIView {
         }
     }
     
-    public init(frame: CGRect, appearance: UILogViewApperance = UILogViewApperance()) {
+    private var foldedSize: CGSize {
+        CGSize(width: self.appearance.foldedWidth, height: self.appearance.titleAreaHeight)
+    }
+    
+    private var expandedSize: CGSize {
+        CGSize(
+            width: self.appearance.expanededWidth,
+            height: self.appearance.titleAreaHeight +
+            self.appearance.topControlAreaHeight +
+            self.appearance.logAreaHeight +
+            self.appearance.bottomControlAreaHeight
+        )
+    }
+    
+    public init(point: CGPoint, appearance: UILogViewApperance = UILogViewApperance()) {
         self.appearance = appearance
+        let frame = CGRect(
+            origin: point,
+            size: CGSize(
+                width: appearance.foldedWidth,
+                height: appearance.titleAreaHeight
+            )
+        )
         super.init(frame: frame)
         self.configureViews()
     }
@@ -50,16 +75,29 @@ extension UILogView {
 
 extension UILogView {
     public override func layoutSubviews() {
-        let isNowExpanded = expandedView.superview == self
-        guard isNowExpanded != self.isExpanded else {
-            return
-        }
         if self.isExpanded {
             self.foldedView.removeFromSuperview()
             self.addSubview(self.expandedView)
+            self.frame = CGRect(
+                origin: self.frame.origin,
+                size: self.expandedSize
+            )
+            self.expandedView.frame = CGRect(
+                origin: .zero,
+                size: self.expandedSize
+            )
         } else {
             self.expandedView.removeFromSuperview()
             self.addSubview(self.foldedView)
+            self.frame = CGRect(
+                origin: self.frame.origin,
+                size: self.foldedSize
+            )
+            self.foldedView.frame = CGRect(
+                origin: .zero,
+                size: self.foldedSize
+            )
+
         }
     }
     
@@ -91,7 +129,10 @@ extension UILogView {
     private func configureExpandedBodyView() {
         let logBodyView = UIView(
             frame: CGRect(
-                origin: .zero,
+                origin: CGPoint(
+                    x: .zero,
+                    y: self.appearance.titleAreaHeight
+                ),
                 size: CGSize(
                     width: self.appearance.expanededWidth,
                     height: (self.appearance.topControlAreaHeight + self.appearance.logAreaHeight + self.appearance.bottomControlAreaHeight)
@@ -164,7 +205,7 @@ extension UILogView {
                 height: self.appearance.logAreaHeight
             )
         )
-        self.addSubview(self.logTableView)
+        logBodyView.addSubview(self.logTableView)
     }
     
     private func configureBottomControlAreaView(to logBodyView: UIView) {
@@ -247,7 +288,6 @@ extension UILogView {
 extension UILogView {
     @objc private func didTapTitleView() {
         self.isExpanded.toggle()
-        self.setNeedsLayout()
     }
     
     @objc private func didTapGoUpButton() {
@@ -439,7 +479,7 @@ public struct UILogViewApperance {
     let borderWidth: CGFloat = 2
     
     let titleAreaHeight: CGFloat = 30
-    let foldedWidth: CGFloat = 60
+    let foldedWidth: CGFloat = 100
     let expanededWidth: CGFloat = 200
     
     let foldedTitle: String = "Show Logs"
