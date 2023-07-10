@@ -82,10 +82,7 @@ extension UILogView {
                 origin: self.frame.origin,
                 size: self.expandedSize
             )
-            self.expandedView.frame = CGRect(
-                origin: .zero,
-                size: self.expandedSize
-            )
+            self.expandedView.frame = self.bounds
         } else {
             self.expandedView.removeFromSuperview()
             self.addSubview(self.foldedView)
@@ -93,11 +90,7 @@ extension UILogView {
                 origin: self.frame.origin,
                 size: self.foldedSize
             )
-            self.foldedView.frame = CGRect(
-                origin: .zero,
-                size: self.foldedSize
-            )
-
+            self.foldedView.frame = self.bounds
         }
     }
     
