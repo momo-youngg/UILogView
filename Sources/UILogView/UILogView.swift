@@ -140,6 +140,8 @@ extension UILogView {
         self.configureTopControlAreaView(to: logBodyView)
         self.configureLogAreaView(to: logBodyView)
         self.configureBottomControlAreaView(to: logBodyView)
+        
+        self.expandedView.backgroundColor = self.appearance.backgroundColor
     }
     
     private func configureTopControlAreaView(to logBodyView: UIView) {
@@ -154,18 +156,29 @@ extension UILogView {
         )
         logBodyView.addSubview(topControlAreaView)
         
-        let searchImageView = UIImageView(image: UIImage(systemName: "magnifyingglass"))
+        let image = UIImage(systemName: "magnifyingglass")?
+            .withTintColor(self.appearance.iconColor, renderingMode: .alwaysOriginal)
+        let searchImageView = UIImageView(image: image)
         topControlAreaView.addSubview(searchImageView)
         searchImageView.frame = CGRect(
-            origin: .zero,
+            origin: CGPoint(
+                x: (self.appearance.topControlAreaHeight - self.appearance.iconSize) / 2,
+                y: (self.appearance.topControlAreaHeight - self.appearance.iconSize) / 2
+            ),
             size: CGSize(
-                width: self.appearance.topControlAreaHeight,
-                height: self.appearance.topControlAreaHeight
+                width: self.appearance.iconSize,
+                height: self.appearance.iconSize
             )
         )
         
         let searchTextField = UITextField()
-        searchTextField.placeholder = "Filter"
+        searchTextField.font = UIFont.systemFont(ofSize: self.appearance.fontSize)
+        searchTextField.tintColor = self.appearance.textColor
+        searchTextField.textColor = self.appearance.textColor
+        searchTextField.attributedPlaceholder = NSAttributedString(
+            string: "Filter",
+            attributes: [NSAttributedString.Key.foregroundColor : self.appearance.textColor.withAlphaComponent(0.5)]
+        )
         topControlAreaView.addSubview(searchTextField)
         searchTextField.frame = CGRect(
             origin: CGPoint(
@@ -177,11 +190,11 @@ extension UILogView {
                 height: self.appearance.topControlAreaHeight
             )
         )
-        
         searchTextField.delegate = self
     }
     
     private func configureLogAreaView(to logBodyView: UIView) {
+        self.logTableView.backgroundColor = self.appearance.backgroundColor
         self.logTableView.register(
             LogTableViewCell.self,
             forCellReuseIdentifier: String(describing: LogTableViewCell.self)
@@ -259,14 +272,15 @@ extension UILogView {
                 )
             )
         )
-        titleAreaView.backgroundColor = self.appearance.backgroundColor
+        titleAreaView.backgroundColor = self.appearance.titleAreaBackgroundColor
         titleAreaView.layer.borderWidth = self.appearance.borderWidth
         titleAreaView.layer.borderColor = self.appearance.borderColor.cgColor
         parentView.addSubview(titleAreaView)
         
         let titleLabel = UILabel()
+        titleLabel.font = UIFont.systemFont(ofSize: self.appearance.fontSize)
         titleLabel.text = text
-        titleLabel.textColor = self.appearance.textColor
+        titleLabel.textColor = self.appearance.titleAreaTextColor
         titleAreaView.addSubview(titleLabel)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -322,6 +336,7 @@ extension UILogView {
     
     private func showAlert(message: String) {
         let alertLabel = UILabel()
+        alertLabel.font = UIFont.systemFont(ofSize: self.appearance.fontSize)
         alertLabel.text = message
         alertLabel.textColor = self.appearance.alertTextColor
         
@@ -426,7 +441,9 @@ extension UILogView {
             self.logTextLabel.text = log.text
             
             self.dateLabel.textColor = self.appearance.textColor
+            self.dateLabel.font = UIFont.systemFont(ofSize: self.appearance.fontSize)
             self.logTextLabel.textColor = self.appearance.textColor
+            self.logTextLabel.font = UIFont.systemFont(ofSize: self.appearance.fontSize)
         }
         
         private func configureView() {
@@ -466,21 +483,25 @@ extension UILogView {
 }
 
 public struct UILogViewApperance {
+    let titleAreaBackgroundColor: UIColor = .green
+    let titleAreaTextColor: UIColor = .black
+    
     let textColor: UIColor = .green
     let backgroundColor: UIColor = .black
     let borderColor: UIColor = .black
-    let borderWidth: CGFloat = 2
+    let borderWidth: CGFloat = 3
     
-    let titleAreaHeight: CGFloat = 30
-    let foldedWidth: CGFloat = 100
-    let expanededWidth: CGFloat = 200
+    let titleAreaHeight: CGFloat = 25
+    let foldedWidth: CGFloat = 80
+    let expanededWidth: CGFloat = 300
     
     let foldedTitle: String = "Show Logs"
-    let expanededTitle: String = "Logs"
+    let expanededTitle: String = "Logs (Tap to fold)"
     
-    let topControlAreaHeight: CGFloat = 40
-    let logAreaHeight: CGFloat = 200
+    let topControlAreaHeight: CGFloat = 30
+    let logAreaHeight: CGFloat = 300
     let bottomControlAreaHeight: CGFloat = 40
+    let topControlAreaSpacing: CGFloat = 5
     
     let customActionButtonHandler: (([Log]) -> Void)? = nil
     let customActionAlertText: String = "Something Happens"
@@ -493,6 +514,10 @@ public struct UILogViewApperance {
     let alertPadding: CGFloat = 5
     let alertDistanceFromTop: CGFloat = 10
     let alertDismissDuration: Int = 2
+    
+    let fontSize: CGFloat = 12
+    let iconColor: UIColor = .green
+    let iconSize: CGFloat = 15
     public init() { }
 }
 
