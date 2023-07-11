@@ -156,9 +156,7 @@ extension UILogView {
         )
         logBodyView.addSubview(topControlAreaView)
         
-        let image = UIImage(systemName: "magnifyingglass")?
-            .withTintColor(self.appearance.iconColor, renderingMode: .alwaysOriginal)
-        let searchImageView = UIImageView(image: image)
+        let searchImageView = self.systemImageView("magnifyingglass")
         topControlAreaView.addSubview(searchImageView)
         searchImageView.frame = CGRect(
             origin: CGPoint(
@@ -218,8 +216,8 @@ extension UILogView {
         let bottomControlAreaView = UIView(
             frame: CGRect(
                 origin: CGPoint(
-                    x: .zero,
-                    y: self.appearance.topControlAreaHeight + self.appearance.logAreaHeight
+                    x: logBodyView.bounds.origin.x,
+                    y: logBodyView.bounds.height - self.appearance.bottomControlAreaHeight
                 ),
                 size: CGSize(
                     width: self.appearance.expanededWidth,
@@ -229,18 +227,18 @@ extension UILogView {
         )
         logBodyView.addSubview(bottomControlAreaView)
         
-        func uiButtonWithImage(systemName: String, selector: Selector) -> UIButton {
+        func uiButtonWithImage(systemName: String, selector: Selector) -> UIView {
             let button = UIButton()
-            let image = UIImage(systemName: systemName)
+            let image = self.systemImage(systemName)
             button.setImage(image, for: .normal)
             button.addTarget(self, action: selector, for: .touchUpInside)
-            return button
+            return self.viewWithCenteredContent(button)
         }
         let goUpButton = uiButtonWithImage(systemName: "arrow.up", selector: #selector(didTapGoUpButton))
         let goDownButton = uiButtonWithImage(systemName: "arrow.down", selector: #selector(didTapGoDownButton))
-        let clearButton = uiButtonWithImage(systemName: "xmark", selector: #selector(didTapClearButton))
+        let clearButton = uiButtonWithImage(systemName: "clear", selector: #selector(didTapClearButton))
         let copyButton = uiButtonWithImage(systemName: "doc.on.doc", selector: #selector(didTapCopyButton))
-        let customActionButton: UIButton? = {
+        let customActionButton: UIView? = {
             if self.appearance.customActionButtonHandler == nil {
                 return nil
             } else {
@@ -250,16 +248,10 @@ extension UILogView {
         let buttons = [goUpButton, goDownButton, clearButton, copyButton, customActionButton].compactMap { $0 }
         let buttonStackView = UIStackView(arrangedSubviews: buttons)
         buttonStackView.axis = .horizontal
-        buttonStackView.distribution = .equalSpacing
+        buttonStackView.distribution = .fillEqually
         buttonStackView.alignment = .fill
         bottomControlAreaView.addSubview(buttonStackView)
-        buttonStackView.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            buttonStackView.leadingAnchor.constraint(equalTo: bottomControlAreaView.leadingAnchor),
-            buttonStackView.topAnchor.constraint(equalTo: bottomControlAreaView.topAnchor),
-            buttonStackView.bottomAnchor.constraint(equalTo: bottomControlAreaView.bottomAnchor),
-            buttonStackView.trailingAnchor.constraint(equalTo: bottomControlAreaView.trailingAnchor)
-        ])
+        buttonStackView.frame = bottomControlAreaView.bounds
     }
     
     private func configureTitleLabel(to parentView: UIView, text: String, width: CGFloat, height: CGFloat) {
@@ -482,6 +474,30 @@ extension UILogView {
     }
 }
 
+extension UILogView {
+    private func systemImage(_ systemName: String) -> UIImage? {
+        UIImage(systemName: systemName)?
+            .withTintColor(self.appearance.iconColor, renderingMode: .alwaysOriginal)
+    }
+    
+    private func systemImageView(_ systemName: String) -> UIImageView {
+        return UIImageView(image: self.systemImage(systemName))
+    }
+    
+    private func viewWithCenteredContent(_ targetView: UIView) -> UIView {
+        let view = UIView()
+        view.addSubview(targetView)
+        targetView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            targetView.widthAnchor.constraint(equalToConstant: self.appearance.iconSize),
+            targetView.widthAnchor.constraint(equalTo: targetView.heightAnchor),
+            targetView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            targetView.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+        return view
+    }
+}
+
 public struct UILogViewApperance {
     let titleAreaBackgroundColor: UIColor = .green
     let titleAreaTextColor: UIColor = .black
@@ -500,7 +516,7 @@ public struct UILogViewApperance {
     
     let topControlAreaHeight: CGFloat = 30
     let logAreaHeight: CGFloat = 300
-    let bottomControlAreaHeight: CGFloat = 40
+    let bottomControlAreaHeight: CGFloat = 30
     let topControlAreaSpacing: CGFloat = 5
     
     let customActionButtonHandler: (([Log]) -> Void)? = nil
