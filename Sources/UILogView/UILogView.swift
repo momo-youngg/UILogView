@@ -13,38 +13,27 @@ public class UILogView: UIView {
     private let logTableView: UITableView = UITableView()
     private weak var selectedLogView: UIView? = nil
     private var selectedLogBody: String? = nil
-    
     private var logs: [Log] = [] {
         didSet {
+            let isBottom = self.isLogTableViewScrollAtBottom
             self.logTableView.reloadData()
+            if isBottom {
+                DispatchQueue.main.async {
+                    self.didTapGoDownButton()
+                }
+            }
         }
     }
-    
     private var filteredLog: [Log] {
         guard let filteredString = filteredString, filteredString.isEmpty == false else {
             return self.logs
         }
         return logs.filter { $0.text.contains(filteredString) }
     }
-    
     private var filteredString: String? = nil {
         didSet {
             self.logTableView.reloadData()
         }
-    }
-    
-    private var foldedSize: CGSize {
-        CGSize(width: self.appearance.foldedWidth, height: self.appearance.titleAreaHeight)
-    }
-    
-    private var expandedSize: CGSize {
-        CGSize(
-            width: self.appearance.expanededWidth,
-            height: self.appearance.titleAreaHeight +
-            self.appearance.topControlAreaHeight +
-            self.appearance.logAreaHeight +
-            self.appearance.bottomControlAreaHeight
-        )
     }
     
     public init(point: CGPoint, appearance: UILogViewApperance = UILogViewApperance()) {
@@ -72,6 +61,30 @@ extension UILogView {
         DispatchQueue.main.async {
             self.logs.append(log)
         }
+    }
+}
+
+extension UILogView {
+    private var foldedSize: CGSize {
+        CGSize(width: self.appearance.foldedWidth, height: self.appearance.titleAreaHeight)
+    }
+    
+    private var expandedSize: CGSize {
+        CGSize(
+            width: self.appearance.expanededWidth,
+            height: self.appearance.titleAreaHeight +
+            self.appearance.topControlAreaHeight +
+            self.appearance.logAreaHeight +
+            self.appearance.bottomControlAreaHeight
+        )
+    }
+    
+    private var isLogTableViewScrollAtBottom: Bool {
+        let totalScrollViewHeight = self.logTableView.contentSize.height
+        let scrollFromTop = self.logTableView.contentOffset.y
+        let contentAreaHeight =  self.logTableView.bounds.size.height
+        
+        return scrollFromTop + contentAreaHeight > totalScrollViewHeight
     }
 }
 
@@ -285,7 +298,7 @@ extension UILogView {
     }
     
     @objc private func didTapGoUpButton() {
-        self.logTableView.setContentOffset(CGPoint(x: 0, y: 0), animated: true)
+        self.logTableView.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
     }
     
     @objc private func didTapGoDownButton() {
@@ -293,7 +306,7 @@ extension UILogView {
             return
         }
         let indexPath = IndexPath(row: self.filteredLog.count-1, section: 0)
-        self.logTableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
+        self.logTableView.scrollToRow(at: indexPath, at: .bottom, animated: false)
     }
     
     @objc private func didTapClearButton() {
