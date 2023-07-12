@@ -11,6 +11,8 @@ public class UILogView: UIView {
         }
     }
     private let logTableView: UITableView = UITableView()
+    private weak var selectedLogView: UIView? = nil
+    private var selectedLogBody: String? = nil
     
     private var logs: [Log] = [] {
         didSet {
@@ -227,22 +229,15 @@ extension UILogView {
         )
         logBodyView.addSubview(bottomControlAreaView)
         
-        func uiButtonWithImage(systemName: String, selector: Selector) -> UIView {
-            let button = UIButton()
-            let image = Self.systemImage(systemName, color: self.appearance.iconColor)
-            button.setImage(image, for: .normal)
-            button.addTarget(self, action: selector, for: .touchUpInside)
-            return self.viewWithCenteredContent(button)
-        }
-        let goUpButton = uiButtonWithImage(systemName: "arrow.up", selector: #selector(didTapGoUpButton))
-        let goDownButton = uiButtonWithImage(systemName: "arrow.down", selector: #selector(didTapGoDownButton))
-        let clearButton = uiButtonWithImage(systemName: "clear", selector: #selector(didTapClearButton))
-        let copyButton = uiButtonWithImage(systemName: "doc.on.doc", selector: #selector(didTapCopyButton))
+        let goUpButton = self.uiButtonWithImage(systemName: "arrow.up", selector: #selector(didTapGoUpButton))
+        let goDownButton = self.uiButtonWithImage(systemName: "arrow.down", selector: #selector(didTapGoDownButton))
+        let clearButton = self.uiButtonWithImage(systemName: "clear", selector: #selector(didTapClearButton))
+        let copyButton = self.uiButtonWithImage(systemName: "doc.on.doc", selector: #selector(didTapCopyButton))
         let customActionButton: UIView? = {
             if self.appearance.customActionButtonHandler == nil {
                 return nil
             } else {
-                return uiButtonWithImage(systemName: "square.and.pencil", selector: #selector(didTapCustomActionButton))
+                return self.uiButtonWithImage(systemName: "square.and.pencil", selector: #selector(didTapCustomActionButton))
             }
         }()
         let buttons = [goUpButton, goDownButton, clearButton, copyButton, customActionButton].compactMap { $0 }
@@ -310,7 +305,7 @@ extension UILogView {
         }
             .joined(separator: "\n")
         UIPasteboard.general.string = joinedLogsString
-        self.showAlert(message: "Copied all logs")
+        self.showAlert(message: "All logs copied")
     }
     
     @objc private func didTapCustomActionButton() {
@@ -327,6 +322,7 @@ extension UILogView {
         let backgroundView = UIView()
         alertLabel.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.backgroundColor = self.appearance.alertBackgroundColor
+        backgroundView.addSubview(alertLabel)
         NSLayoutConstraint.activate([
             alertLabel.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: self.appearance.alertPadding),
             alertLabel.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: self.appearance.alertPadding),
@@ -349,16 +345,91 @@ extension UILogView {
         }
     }
     
-    private func copyLog(_ log: Log) {
+    private func selectLog(_ log: Log) {
+        let selectedLogView = UIView()
+        selectedLogView.backgroundColor = self.appearance.backgroundColor
+        selectedLogView.frame = CGRect(
+            x: .zero,
+            y: self.appearance.titleAreaHeight,
+            width: self.expandedSize.width,
+            height: self.expandedSize.height - self.appearance.titleAreaHeight
+        )
+        self.expandedView.addSubview(selectedLogView)
+        self.selectedLogView = selectedLogView
+        
+        let topControlAreaView = UIView(
+            frame: CGRect(
+                origin: .zero,
+                size: CGSize(
+                    width: self.appearance.expanededWidth,
+                    height: self.appearance.topControlAreaHeight
+                )
+            )
+        )
+        selectedLogView.addSubview(topControlAreaView)
+        
+        let gap = (self.appearance.topControlAreaHeight - self.appearance.iconSize) / 2
+        let backImageButton = self.uiButtonWithImage(systemName: "arrow.backward", selector: #selector(didTapBackButton))
+        topControlAreaView.addSubview(backImageButton)
+        backImageButton.frame = CGRect(
+            origin: CGPoint(
+                x: gap,
+                y: gap
+            ),
+            size: CGSize(
+                width: self.appearance.iconSize,
+                height: self.appearance.iconSize
+            )
+        )
+        
+        let copyImageButton = self.uiButtonWithImage(systemName: "doc.on.doc", selector: #selector(didTapSelectedLogCopyButton))
+        topControlAreaView.addSubview(copyImageButton)
+        copyImageButton.frame = CGRect(
+            origin: CGPoint(
+                x: topControlAreaView.bounds.size.width - self.appearance.iconSize - gap,
+                y: gap
+            ),
+            size: CGSize(
+                width: self.appearance.iconSize,
+                height: self.appearance.iconSize
+            )
+        )
+        
+        let logTextLabel = UILabel()
+        logTextLabel.font = UIFont.systemFont(ofSize: self.appearance.fontSize)
+        logTextLabel.textColor = self.appearance.textColor
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = self.appearance.dateFormat
-        let formattedDate = dateFormatter.string(from: log.date)
-        UIPasteboard.general.string = "\(formattedDate) \(log.text)"
-        self.showAlert(message: "Copied selected log")
+        let dateText = dateFormatter.string(from: log.date)
+        let logBody = "> [\(dateText)] \(log.text)"
+        self.selectedLogBody = logBody
+        logTextLabel.text = logBody
+        logTextLabel.numberOfLines = 0
+        selectedLogView.addSubview(logTextLabel)
+        logTextLabel.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            logTextLabel.topAnchor.constraint(
+                equalTo: selectedLogView.topAnchor,
+                constant: topControlAreaView.bounds.height + self.appearance.logCellPadding.top
+            ),
+            logTextLabel.leadingAnchor.constraint(
+                equalTo: selectedLogView.leadingAnchor,
+                constant: self.appearance.logCellPadding.left
+            ),
+            logTextLabel.trailingAnchor.constraint(
+                equalTo: selectedLogView.trailingAnchor,
+                constant: -self.appearance.logCellPadding.right
+            )
+        ])
     }
     
-    private func selectLog(_ log: Log) {
-        
+    @objc private func didTapSelectedLogCopyButton() {
+        UIPasteboard.general.string = self.selectedLogBody
+        self.showAlert(message: "Selected log copied")
+    }
+    
+    @objc private func didTapBackButton() {
+        self.selectedLogView?.removeFromSuperview()
     }
 }
 
@@ -417,7 +488,7 @@ extension UILogView {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = self.appearance.dateFormat
             let dateText = dateFormatter.string(from: log.date)
-            self.logTextLabel.text = "> \(dateText) \(log.text)"
+            self.logTextLabel.text = "> [\(dateText)] \(log.text)"
             
             self.logTextLabel.textColor = self.appearance.textColor
             self.logTextLabel.font = UIFont.systemFont(ofSize: self.appearance.fontSize)
@@ -478,6 +549,14 @@ extension UILogView {
         ])
         return view
     }
+    
+    private func uiButtonWithImage(systemName: String, selector: Selector) -> UIView {
+        let button = UIButton()
+        let image = Self.systemImage(systemName, color: self.appearance.iconColor)
+        button.setImage(image, for: .normal)
+        button.addTarget(self, action: selector, for: .touchUpInside)
+        return self.viewWithCenteredContent(button)
+    }
 }
 
 public struct UILogViewApperance {
@@ -508,16 +587,16 @@ public struct UILogViewApperance {
     let dateFormat: String = "MM-dd HH:mm:ss.SSS"
     
     let alertTextColor: UIColor = .black
-    let alertBackgroundColor: UIColor = .white.withAlphaComponent(0.7)
+    let alertBackgroundColor: UIColor = .white.withAlphaComponent(0.8)
     let alertPadding: CGFloat = 5
-    let alertDistanceFromTop: CGFloat = 10
+    let alertDistanceFromTop: CGFloat = 40
     let alertDismissDuration: Int = 2
     
     let fontSize: CGFloat = 10
     let iconColor: UIColor = .green
     let iconSize: CGFloat = 15
     
-    let logCellPadding: UIEdgeInsets = UIEdgeInsets(top: 1, left: 2, bottom: 1, right: 2)
+    let logCellPadding: UIEdgeInsets = UIEdgeInsets(top: 1, left: 3, bottom: 1, right: 3)
     public init() { }
 }
 
