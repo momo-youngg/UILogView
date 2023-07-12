@@ -285,11 +285,15 @@ extension UILogView {
     }
     
     @objc private func didTapGoUpButton() {
-        self.logTableView.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
+        self.logTableView.setContentOffset(CGPoint(x: 0, y: 0), animated: true)
     }
     
     @objc private func didTapGoDownButton() {
-        self.logTableView.setContentOffset(CGPoint(x: 0, y: self.logTableView.contentSize.height), animated: false)
+        guard self.filteredLog.isEmpty == false else {
+            return
+        }
+        let indexPath = IndexPath(row: self.filteredLog.count-1, section: 0)
+        self.logTableView.scrollToRow(at: indexPath, at: .bottom, animated: true)
     }
     
     @objc private func didTapClearButton() {
