@@ -458,6 +458,7 @@ extension UILogView: UITableViewDataSource {
         cell.onSelectLog = { [weak self] log in
             self?.selectLog(log)
         }
+        cell.layoutIfNeeded()
         return cell
     }
 }
