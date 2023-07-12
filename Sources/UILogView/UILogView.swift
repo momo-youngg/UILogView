@@ -21,7 +21,7 @@ public class UILogView: UIView {
     }
     
     private var filteredLog: [Log] {
-        guard let filteredString = filteredString else {
+        guard let filteredString = filteredString, filteredString.isEmpty == false else {
             return self.logs
         }
         return logs.filter { $0.text.contains(filteredString) }
@@ -190,7 +190,7 @@ extension UILogView {
                 height: self.appearance.topControlAreaHeight
             )
         )
-        searchTextField.delegate = self
+        searchTextField.addTarget(self, action: #selector(filterTextFieldChanged(textField:)), for: .editingChanged)
     }
     
     private func configureLogAreaView(to logBodyView: UIView) {
@@ -431,12 +431,9 @@ extension UILogView {
     @objc private func didTapBackButton() {
         self.selectedLogView?.removeFromSuperview()
     }
-}
-
-extension UILogView: UITextFieldDelegate {
-    public func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+    
+    @objc private func filterTextFieldChanged(textField: UITextField) {
         self.filteredString = textField.text
-        return true
     }
 }
 
