@@ -156,7 +156,7 @@ extension UILogView {
         )
         logBodyView.addSubview(topControlAreaView)
         
-        let searchImageView = self.systemImageView("magnifyingglass")
+        let searchImageView = Self.systemImageView("magnifyingglass", color: self.appearance.iconColor)
         topControlAreaView.addSubview(searchImageView)
         searchImageView.frame = CGRect(
             origin: CGPoint(
@@ -229,7 +229,7 @@ extension UILogView {
         
         func uiButtonWithImage(systemName: String, selector: Selector) -> UIView {
             let button = UIButton()
-            let image = self.systemImage(systemName)
+            let image = Self.systemImage(systemName, color: self.appearance.iconColor)
             button.setImage(image, for: .normal)
             button.addTarget(self, action: selector, for: .touchUpInside)
             return self.viewWithCenteredContent(button)
@@ -290,19 +290,11 @@ extension UILogView {
     }
     
     @objc private func didTapGoUpButton() {
-        self.logTableView.scrollToRow(
-            at: IndexPath(index: .zero),
-            at: .top,
-            animated: true
-        )
+        self.logTableView.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
     }
     
     @objc private func didTapGoDownButton() {
-        self.logTableView.scrollToRow(
-            at: IndexPath(index: self.filteredLog.count - 1),
-            at: .bottom,
-            animated: true
-        )
+        self.logTableView.setContentOffset(CGPoint(x: 0, y: self.logTableView.contentSize.height), animated: false)
     }
     
     @objc private func didTapClearButton() {
@@ -364,6 +356,10 @@ extension UILogView {
         UIPasteboard.general.string = "\(formattedDate) \(log.text)"
         self.showAlert(message: "Copied selected log")
     }
+    
+    private func selectLog(_ log: Log) {
+        
+    }
 }
 
 extension UILogView: UITextFieldDelegate {
@@ -388,7 +384,9 @@ extension UILogView: UITableViewDataSource {
         let log = self.filteredLog[indexPath.row]
         cell.log = log
         cell.appearance = self.appearance
-        cell.longPressHandler = { self.copyLog($0) }
+        cell.onSelectLog = { [weak self] log in
+            self?.selectLog(log)
+        }
         return cell
     }
 }
@@ -403,85 +401,69 @@ extension UILogView {
     private class LogTableViewCell: UITableViewCell {
         var log: Log = Log(text: "")
         var appearance: UILogViewApperance = UILogViewApperance()
-        var longPressHandler: ((Log) -> Void)? = nil
-        private var isExpanded = false
-        private var isConfigured: Bool = false
-        
-        private let foldedDelimiterImage: UIImage? = UIImage(systemName: "greaterthan")
-        private let expandedDelimiterImage: UIImage? = UIImage(systemName: "chevron.down")
-        private let delimiterImageView: UIImageView = UIImageView()
-        private let dateLabel: UILabel = UILabel()
+        var onSelectLog: ((Log) -> Void)? = nil
         private let logTextLabel: UILabel = UILabel()
         
+        override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+            super.init(style: style, reuseIdentifier: reuseIdentifier)
+            configureView()
+        }
+        
+        required init?(coder: NSCoder) {
+            super.init(coder: coder)
+        }
+        
         override func layoutSubviews() {
-            if self.isConfigured == false {
-                self.configureView()
-                self.isConfigured = true
-            }
-            
-            if self.isExpanded {
-                self.delimiterImageView.image = self.expandedDelimiterImage
-                self.logTextLabel.numberOfLines = 0
-            } else {
-                self.delimiterImageView.image = self.foldedDelimiterImage
-                self.logTextLabel.numberOfLines = 1
-            }
-            
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = self.appearance.dateFormat
-            self.dateLabel.text = dateFormatter.string(from: log.date)
-            self.logTextLabel.text = log.text
+            let dateText = dateFormatter.string(from: log.date)
+            self.logTextLabel.text = "> \(dateText) \(log.text)"
             
-            self.dateLabel.textColor = self.appearance.textColor
-            self.dateLabel.font = UIFont.systemFont(ofSize: self.appearance.fontSize)
             self.logTextLabel.textColor = self.appearance.textColor
             self.logTextLabel.font = UIFont.systemFont(ofSize: self.appearance.fontSize)
         }
         
         private func configureView() {
-            let stackView = UIStackView(arrangedSubviews: [self.delimiterImageView, self.dateLabel, self.logTextLabel])
-            stackView.axis = .horizontal
-            stackView.alignment = .top
-            stackView.distribution = .fill
-            
-            self.addSubview(stackView)
-            stackView.translatesAutoresizingMaskIntoConstraints = false
+            self.logTextLabel.numberOfLines = 1
+            self.contentView.addSubview(self.logTextLabel)
+            self.logTextLabel.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                stackView.topAnchor.constraint(equalTo: self.topAnchor),
-                stackView.bottomAnchor.constraint(equalTo: self.bottomAnchor),
-                stackView.leadingAnchor.constraint(equalTo: self.leadingAnchor),
-                stackView.trailingAnchor.constraint(equalTo: self.trailingAnchor)
+                self.logTextLabel.topAnchor.constraint(
+                    equalTo: self.contentView.topAnchor,
+                    constant: self.appearance.logCellPadding.top
+                ),
+                self.logTextLabel.bottomAnchor.constraint(
+                    equalTo: self.contentView.bottomAnchor,
+                    constant: -self.appearance.logCellPadding.bottom
+                ),
+                self.logTextLabel.leadingAnchor.constraint(
+                    equalTo: self.contentView.leadingAnchor,
+                    constant: self.appearance.logCellPadding.left
+                ),
+                self.logTextLabel.trailingAnchor.constraint(
+                    equalTo: self.contentView.trailingAnchor,
+                    constant: -self.appearance.logCellPadding.right
+                )
             ])
             
             self.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapCell)))
-            self.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(didLogPressCell)))
-        }
-        
-        override func prepareForReuse() {
-            self.isExpanded = false
         }
         
         @objc
         private func didTapCell() {
-            self.isExpanded.toggle()
-            self.setNeedsLayout()
-        }
-        
-        @objc
-        private func didLogPressCell() {
-            self.longPressHandler?(self.log)
+            self.onSelectLog?(self.log)
         }
     }
 }
 
 extension UILogView {
-    private func systemImage(_ systemName: String) -> UIImage? {
+    static func systemImage(_ systemName: String, color: UIColor) -> UIImage? {
         UIImage(systemName: systemName)?
-            .withTintColor(self.appearance.iconColor, renderingMode: .alwaysOriginal)
+            .withTintColor(color, renderingMode: .alwaysOriginal)
     }
     
-    private func systemImageView(_ systemName: String) -> UIImageView {
-        return UIImageView(image: self.systemImage(systemName))
+    static func systemImageView(_ systemName: String, color: UIColor) -> UIImageView {
+        return UIImageView(image: self.systemImage(systemName, color: color))
     }
     
     private func viewWithCenteredContent(_ targetView: UIView) -> UIView {
@@ -523,7 +505,7 @@ public struct UILogViewApperance {
     let customActionAlertText: String = "Something Happens"
     let textColorAppearance: [Log.Level: UIColor] = [:]
     
-    let dateFormat: String = "yyyy-MM-dd HH:mm:sss"
+    let dateFormat: String = "MM-dd HH:mm:ss.SSS"
     
     let alertTextColor: UIColor = .black
     let alertBackgroundColor: UIColor = .white.withAlphaComponent(0.7)
@@ -531,9 +513,11 @@ public struct UILogViewApperance {
     let alertDistanceFromTop: CGFloat = 10
     let alertDismissDuration: Int = 2
     
-    let fontSize: CGFloat = 12
+    let fontSize: CGFloat = 10
     let iconColor: UIColor = .green
     let iconSize: CGFloat = 15
+    
+    let logCellPadding: UIEdgeInsets = UIEdgeInsets(top: 1, left: 2, bottom: 1, right: 2)
     public init() { }
 }
 
