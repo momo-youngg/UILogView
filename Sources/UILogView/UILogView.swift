@@ -488,7 +488,12 @@ extension UILogView {
             let dateText = dateFormatter.string(from: log.date)
             self.logTextLabel.text = "> [\(dateText)] \(log.text)"
             
-            self.logTextLabel.textColor = self.appearance.textColor
+            self.logTextLabel.textColor = {
+                if let textColor = self.appearance.textColorAppearance[self.log.level] {
+                    return textColor
+                }
+                return self.appearance.textColor
+            }()
             self.logTextLabel.font = UIFont.systemFont(ofSize: self.appearance.fontSize)
         }
         
@@ -558,50 +563,112 @@ extension UILogView {
 }
 
 public struct UILogViewApperance {
-    let titleAreaBackgroundColor: UIColor = .green
-    let titleAreaTextColor: UIColor = .black
+    let textColor: UIColor
+    let backgroundColor: UIColor
+    let titleAreaBackgroundColor: UIColor
+    let titleAreaTextColor: UIColor
+    let textColorAppearance: [Log.Level: UIColor]
+
+    let fontSize: CGFloat
+    let iconColor: UIColor
+    let iconSize: CGFloat
+
+    let titleAreaHeight: CGFloat
+    let foldedWidth: CGFloat
+    let expanededWidth: CGFloat
     
-    let textColor: UIColor = .green
-    let backgroundColor: UIColor = .black
-    let borderColor: UIColor = .black
-    let borderWidth: CGFloat = 3
+    let borderColor: UIColor
+    let borderWidth: CGFloat
     
-    let titleAreaHeight: CGFloat = 25
-    let foldedWidth: CGFloat = 80
-    let expanededWidth: CGFloat = 300
+    let foldedTitle: String
+    let expanededTitle: String
     
-    let foldedTitle: String = "Show Logs"
-    let expanededTitle: String = "Logs (Tap to fold)"
+    let topControlAreaHeight: CGFloat
+    let logAreaHeight: CGFloat
+    let bottomControlAreaHeight: CGFloat
+    let topControlAreaSpacing: CGFloat
     
-    let topControlAreaHeight: CGFloat = 30
-    let logAreaHeight: CGFloat = 300
-    let bottomControlAreaHeight: CGFloat = 30
-    let topControlAreaSpacing: CGFloat = 5
+    let customActionButtonHandler: (([Log]) -> Void)?
+    let customActionAlertText: String
     
-    let customActionButtonHandler: (([Log]) -> Void)? = nil
-    let customActionAlertText: String = "Something Happens"
-    let textColorAppearance: [Log.Level: UIColor] = [:]
+    let dateFormat: String
+    let logCellPadding: UIEdgeInsets
     
-    let dateFormat: String = "MM-dd HH:mm:ss.SSS"
+    let alertTextColor: UIColor
+    let alertBackgroundColor: UIColor
+    let alertPadding: CGFloat
+    let alertDistanceFromTop: CGFloat
+    let alertDismissDuration: Int
     
-    let alertTextColor: UIColor = .black
-    let alertBackgroundColor: UIColor = .white.withAlphaComponent(0.8)
-    let alertPadding: CGFloat = 5
-    let alertDistanceFromTop: CGFloat = 40
-    let alertDismissDuration: Int = 2
-    
-    let fontSize: CGFloat = 10
-    let iconColor: UIColor = .green
-    let iconSize: CGFloat = 15
-    
-    let logCellPadding: UIEdgeInsets = UIEdgeInsets(top: 1, left: 3, bottom: 1, right: 3)
-    public init() { }
+    public init(
+        textColor: UIColor = .green,
+        backgroundColor: UIColor = .black,
+        titleAreaBackgroundColor: UIColor = .green,
+        titleAreaTextColor: UIColor = .black,
+        textColorAppearance: [Log.Level: UIColor] = [:],
+        fontSize: CGFloat = 10,
+        titleAreaHeight: CGFloat = 25,
+        iconColor: UIColor = .green,
+        foldedWidth: CGFloat = 80,
+        expanededWidth: CGFloat = 300,
+        borderColor: UIColor = .black,
+        borderWidth: CGFloat = 3,
+        foldedTitle: String = "Show Logs",
+        expanededTitle: String = "Logs (Tap to fold)",
+        topControlAreaHeight: CGFloat = 25,
+        logAreaHeight: CGFloat = 300,
+        bottomControlAreaHeight: CGFloat = 25,
+        topControlAreaSpacing: CGFloat = 5,
+        customActionButtonHandler: (([Log]) -> Void)? = nil,
+        customActionAlertText: String = "Something Happens",
+        dateFormat: String = "MM-dd HH:mm:ss.SSS",
+        logCellPadding: UIEdgeInsets = UIEdgeInsets(top: 1, left: 3, bottom: 1, right: 3),
+        alertTextColor: UIColor = .black,
+        alertBackgroundColor: UIColor = .white.withAlphaComponent(0.8)
+    ) {
+        self.textColor = textColor
+        self.backgroundColor = backgroundColor
+        self.titleAreaBackgroundColor = titleAreaBackgroundColor
+        self.titleAreaTextColor = titleAreaTextColor
+        self.textColorAppearance = textColorAppearance
+        self.fontSize = fontSize
+        self.iconColor = iconColor
+        self.iconSize = 15
+        self.titleAreaHeight = titleAreaHeight
+        self.foldedWidth = foldedWidth
+        self.expanededWidth = expanededWidth
+        self.borderColor = borderColor
+        self.borderWidth = borderWidth
+        self.foldedTitle = foldedTitle
+        self.expanededTitle = expanededTitle
+        self.topControlAreaHeight = topControlAreaHeight
+        self.logAreaHeight = logAreaHeight
+        self.bottomControlAreaHeight = bottomControlAreaHeight
+        self.topControlAreaSpacing = topControlAreaSpacing
+        self.customActionButtonHandler = customActionButtonHandler
+        self.customActionAlertText = customActionAlertText
+        self.dateFormat = dateFormat
+        self.logCellPadding = logCellPadding
+        self.alertTextColor = alertTextColor
+        self.alertBackgroundColor = alertBackgroundColor
+        self.alertPadding = 5
+        self.alertDistanceFromTop = 40
+        self.alertDismissDuration = 2
+    }
 }
 
 public struct Log {
-    let level: Level = .middle
+    let level: Level
     let text: String
     let date: Date = Date()
+    
+    public init(
+        level: Level = .middle,
+        text: String
+    ) {
+        self.level = level
+        self.text = text
+    }
     
     public enum Level {
         case high, middle, low
