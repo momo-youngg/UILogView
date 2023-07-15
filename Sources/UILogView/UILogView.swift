@@ -47,39 +47,12 @@ public class UILogView: UIView {
      Creates a UILogView.
 
      - Parameters:
-         - point: The origin of new UILogView's frame.
+         - point: The origin of new UILogView's frame. If point is nil, last frame will be used.
          - appearance: The appearance settings of UILogVIew.
 
      - Returns: A new UILogView which is not added to any UIView yet(but frame is set).
      */
-    public init(point: CGPoint, appearance: UILogViewApperance = UILogViewApperance()) {
-        self.appearance = appearance
-        let frame = CGRect(
-            origin: point,
-            size: CGSize(
-                width: appearance.foldedWidth,
-                height: appearance.titleAreaHeight
-            )
-        )
-        super.init(frame: frame)
-        self.configureViews()
-    }
-    
-    /**
-      Create a UILogView and add to specific UIView.
-
-      - Parameters:
-          - view: The View which new UILogView will added.
-          - point: The origin of new UILogView's frame.
-          - appearance: The appearance settings of UILogVIew.
-     
-     - Returns: A new UILogView which is already added to UIView.
-     */
-    public static func addUILogView(
-        on view: UIView,
-        point: CGPoint? = nil,
-        appearance: UILogViewApperance = UILogViewApperance()
-    ) -> UILogView {
+    public init(point: CGPoint? = nil, appearance: UILogViewApperance = UILogViewApperance()) {
         let origin: CGPoint = {
             if let point = point {
                 return point
@@ -88,6 +61,7 @@ public class UILogView: UIView {
                 UserDefaults.standard.object(forKey: Self.originYUserDefaultKey) != nil {
                 let x = UserDefaults.standard.float(forKey: Self.originXUserDefaultKey)
                 let y = UserDefaults.standard.float(forKey: Self.originYUserDefaultKey)
+                print("### x: \(x), y: \(y) loaded")
                 return CGPoint(
                     x: CGFloat(x),
                     y: CGFloat(y)
@@ -99,7 +73,34 @@ public class UILogView: UIView {
                 )
             }
         }()
-        let logView = UILogView(point: origin, appearance: appearance)
+        let frame = CGRect(
+            origin: origin,
+            size: CGSize(
+                width: appearance.foldedWidth,
+                height: appearance.titleAreaHeight
+            )
+        )
+        self.appearance = appearance
+        super.init(frame: frame)
+        self.configureViews()
+    }
+    
+    /**
+      Create a UILogView and add to specific UIView.
+
+      - Parameters:
+          - view: The View which new UILogView will added.
+          - point: The origin of new UILogView's frame. If point is nil, last frame will be used.
+          - appearance: The appearance settings of UILogVIew.
+     
+     - Returns: A new UILogView which is already added to UIView.
+     */
+    public static func addUILogView(
+        on view: UIView,
+        point: CGPoint? = nil,
+        appearance: UILogViewApperance = UILogViewApperance()
+    ) -> UILogView {
+        let logView = UILogView(point: point, appearance: appearance)
         view.addSubview(logView)
         return logView
     }
