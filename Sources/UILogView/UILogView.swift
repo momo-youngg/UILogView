@@ -35,6 +35,8 @@ public class UILogView: UIView {
             self.logTableView.reloadData()
         }
     }
+    private static let originXUserDefaultKey = "UILogViewOriginX1234"
+    private static let originYUserDefaultKey = "UILogViewOriginY1234"
     
     public init(point: CGPoint, appearance: UILogViewApperance = UILogViewApperance()) {
         self.appearance = appearance
@@ -47,6 +49,35 @@ public class UILogView: UIView {
         )
         super.init(frame: frame)
         self.configureViews()
+    }
+    
+    public static func addUILogView(
+        on view: UIView,
+        point: CGPoint? = nil,
+        appearance: UILogViewApperance = UILogViewApperance()
+    ) -> UILogView {
+        let origin: CGPoint = {
+            if let point = point {
+                return point
+            }
+            if UserDefaults.standard.object(forKey: Self.originXUserDefaultKey) != nil &&
+                UserDefaults.standard.object(forKey: Self.originYUserDefaultKey) != nil {
+                let x = UserDefaults.standard.float(forKey: Self.originXUserDefaultKey)
+                let y = UserDefaults.standard.float(forKey: Self.originYUserDefaultKey)
+                return CGPoint(
+                    x: CGFloat(x),
+                    y: CGFloat(y)
+                )
+            } else {
+                return CGPoint(
+                    x: 100,
+                    y: 100
+                )
+            }
+        }()
+        let logView = UILogView(point: origin, appearance: appearance)
+        view.addSubview(logView)
+        return logView
     }
     
     required init?(coder: NSCoder) {
@@ -109,7 +140,6 @@ extension UILogView {
         }
     }
     
-    // called once only at initializer
     private func configureViews() {
         self.configureFoldedView()
         self.configureExpandedView()
@@ -461,15 +491,28 @@ extension UILogView {
     }
     
     @objc private func handlepanTitle(sender: UIPanGestureRecognizer) {
-        if (sender.state == .changed) {
+        if sender.state == .changed {
             guard let senderView = sender.view else {
                 return
             }
             let origin = self.frame.origin
             let translation = sender.translation(in: self)
-            let newOrigin = CGPointMake(origin.x + translation.x, origin.y + translation.y)
-            self.frame = CGRect(origin: newOrigin, size: self.frame.size)
+            let newOrigin = CGPointMake(
+                max(origin.x + translation.x, 0),
+                origin.y + translation.y
+            )
+            let highestSuperView = self.highestSuperView
+            // must not invade safe area of y
+            if newOrigin.y >= highestSuperView.frame.origin.y + highestSuperView.safeAreaInsets.top &&
+                    newOrigin.y <= highestSuperView.frame.height - highestSuperView.safeAreaInsets.bottom {
+                self.frame = CGRect(origin: newOrigin, size: self.frame.size)
+            }
             sender.setTranslation(.zero, in: senderView)
+        }
+        
+        if sender.state == .ended {
+            UserDefaults.standard.set(Float(self.frame.origin.x), forKey: Self.originXUserDefaultKey)
+            UserDefaults.standard.set(Float(self.frame.origin.y), forKey: Self.originYUserDefaultKey)
         }
     }
 }
@@ -709,5 +752,15 @@ public struct Log {
     
     public enum Level {
         case high, middle, low
+    }
+}
+
+extension UIView {
+    fileprivate var highestSuperView: UIView {
+        if let superView = self.superview {
+            return superView.highestSuperView
+        } else {
+            return self
+        }
     }
 }
