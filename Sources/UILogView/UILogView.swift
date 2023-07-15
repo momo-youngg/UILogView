@@ -289,6 +289,7 @@ extension UILogView {
         ])
         
         titleAreaView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(self.didTapTitleView)))
+        titleAreaView.addGestureRecognizer(UIPanGestureRecognizer(target:self, action: #selector(self.handlepanTitle(sender:))))
     }
 }
 
@@ -457,6 +458,19 @@ extension UILogView {
     
     @objc private func filterTextFieldChanged(textField: UITextField) {
         self.filteredString = textField.text
+    }
+    
+    @objc private func handlepanTitle(sender: UIPanGestureRecognizer) {
+        if (sender.state == .changed) {
+            guard let senderView = sender.view else {
+                return
+            }
+            let origin = self.frame.origin
+            let translation = sender.translation(in: self)
+            let newOrigin = CGPointMake(origin.x + translation.x, origin.y + translation.y)
+            self.frame = CGRect(origin: newOrigin, size: self.frame.size)
+            sender.setTranslation(.zero, in: senderView)
+        }
     }
 }
 
