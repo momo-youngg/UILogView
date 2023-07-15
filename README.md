@@ -52,5 +52,8 @@ logView.send(log: Log(level: .high, text: "Hello world!"))
 
 By using UILogView in your project, you can conveniently view and interact with logs directly within your application, providing a seamless debugging and monitoring experience.
 
+## Example:
+<img src="./Screenshots/main.png" alt="UILogView Screenshot" width="500"/>
+
 ## Contact
 Any comments on this project are welcome. Feel free to register for the issue.
