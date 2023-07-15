@@ -8,6 +8,9 @@ public class UILogView: UIView {
     private var isExpanded: Bool = false {
         didSet {
             self.setNeedsLayout()
+            if self.isExpanded {
+                self.logTableView.reloadData()
+            }
         }
     }
     private let logTableView: UITableView = UITableView()
@@ -32,7 +35,9 @@ public class UILogView: UIView {
     }
     private var filteredString: String? = nil {
         didSet {
-            self.logTableView.reloadData()
+            if self.isExpanded {
+                self.logTableView.reloadData()
+            }
         }
     }
     private static let originXUserDefaultKey = "UILogViewOriginX1234"
