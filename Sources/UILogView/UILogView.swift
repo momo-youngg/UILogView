@@ -43,6 +43,15 @@ public class UILogView: UIView {
     private static let originXUserDefaultKey = "UILogViewOriginX1234"
     private static let originYUserDefaultKey = "UILogViewOriginY1234"
     
+    /**
+     Creates a UILogView.
+
+     - Parameters:
+         - point: The origin of new UILogView's frame.
+         - appearance: The appearance settings of UILogVIew.
+
+     - Returns: A new UILogView which is not added to any UIView yet(but frame is set).
+     */
     public init(point: CGPoint, appearance: UILogViewApperance = UILogViewApperance()) {
         self.appearance = appearance
         let frame = CGRect(
@@ -56,6 +65,16 @@ public class UILogView: UIView {
         self.configureViews()
     }
     
+    /**
+      Create a UILogView and add to specific UIView.
+
+      - Parameters:
+          - view: The View which new UILogView will added.
+          - point: The origin of new UILogView's frame.
+          - appearance: The appearance settings of UILogVIew.
+     
+     - Returns: A new UILogView which is already added to UIView.
+     */
     public static func addUILogView(
         on view: UIView,
         point: CGPoint? = nil,
@@ -93,6 +112,7 @@ public class UILogView: UIView {
 }
 
 extension UILogView {
+    /// send a new Log to UILogView
     public func send(log: Log) {
         DispatchQueue.main.async {
             self.logs.append(log)
