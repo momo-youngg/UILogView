@@ -421,6 +421,12 @@ extension UILogView {
         let logBody = "> [\(dateText)] \(log.text)"
         self.selectedLogBody = logBody
         logTextLabel.text = logBody
+        logTextLabel.textColor = {
+            if let textColor = self.appearance.textColorAppearance[log.level] {
+                return textColor
+            }
+            return self.appearance.textColor
+        }()
         logTextLabel.numberOfLines = 0
         selectedLogView.addSubview(logTextLabel)
         logTextLabel.translatesAutoresizingMaskIntoConstraints = false
